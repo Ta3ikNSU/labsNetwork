@@ -65,11 +65,6 @@ public class FinderOfCopy {
                 answer();
                 break;
             }
-            case "OLD_MACHINE": {
-                System.out.println(" OLD_MACHINE " + dataArgs[1]);
-                answer();
-                break;
-            }
             case "DISCONNECT": {
                 System.out.println(" - " + dataArgs[1]);
                 break;
