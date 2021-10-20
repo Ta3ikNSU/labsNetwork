@@ -4,7 +4,7 @@ import java.net.InetAddress
 import java.net.Socket
 import java.net.UnknownHostException
 
-object Client {
+class Client {
     fun sendFile(clientSocket: Socket, file: File) {
         try {
             clientSocket.getInputStream().use { socketInput ->
@@ -20,8 +20,6 @@ object Client {
 
         }
     }
-
-
 }
 
 fun main(args: Array<String>) {
@@ -31,16 +29,17 @@ fun main(args: Array<String>) {
     val filePath = args[0]
     val file = File(filePath)
     if (!file.isFile) {
-
         return
     }
     try {
         val serverAddress = InetAddress.getByName(args[1])
         val serverPort = args[2].toInt()
         Socket(serverAddress, serverPort).use { socket ->
-            Client.sendFile(socket, file)
+            Client().sendFile(socket, file)
         }
     } catch (_: UnknownHostException) {
     } catch (_: IllegalArgumentException) {
     }
 }
+
+

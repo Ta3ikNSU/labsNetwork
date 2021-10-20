@@ -1,7 +1,5 @@
 import java.io.*
 import java.net.Socket
-import java.nio.file.Files
-import java.util.*
 
 class ReceiveProtocol(socket: Socket) {
     private val UPLOADS_FOLDER_NAME = "FileTransferTCPserver\\uploads\\"
@@ -52,9 +50,14 @@ class ReceiveProtocol(socket: Socket) {
 
     @Throws(IOException::class)
     private fun createUniqueFile(): File {
-        val filePath = UPLOADS_FOLDER_NAME + UUID.randomUUID() + fileName
+        val filePath = System.getProperty("user.dir") + "\\" + fileName
+        println(filePath);
         val file = File(filePath)
-        Files.createFile(file.toPath())
+        try {
+            file.createNewFile();
+        } catch (ex: Exception) {
+            println(ex.printStackTrace());
+        }
         return file
     }
 }
