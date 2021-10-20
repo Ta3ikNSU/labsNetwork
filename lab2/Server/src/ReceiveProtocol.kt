@@ -2,7 +2,6 @@ import java.io.*
 import java.net.Socket
 
 class ReceiveProtocol(socket: Socket) {
-    private val UPLOADS_FOLDER_NAME = "FileTransferTCPserver\\uploads\\"
     private val primitiveDataTypesSocketInput: DataInputStream
     private val primitiveDataTypesSocketOutput: DataOutputStream
     private val bufferSize: Int
