@@ -29,9 +29,11 @@ class ReceiveProtocol(socket: Socket) {
 
     @Throws(IOException::class)
     fun receiveFile() {
+
+
         val bytes = ByteArray(bufferSize)
         var bytesAmount: Int
-        BufferedOutputStream(FileOutputStream(file!!.path)).use { bufferedFileOutput ->
+        BufferedOutputStream(FileOutputStream(file.path)).use { bufferedFileOutput ->
             while (primitiveDataTypesSocketInput.read(bytes).also {
                     bytesAmount = it
                 } > 0) {
@@ -43,15 +45,15 @@ class ReceiveProtocol(socket: Socket) {
     @Throws(IOException::class)
     fun sendTransferStatus() {
         val status =
-            if (fileSize == file!!.length()) "File transfer successful! File name: " + file!!.name else "File transfer failed"
+            if (fileSize == file.length()) "File transfer successful! File name: " + file.name else "File transfer failed"
         primitiveDataTypesSocketOutput.writeUTF(status)
     }
 
     @Throws(IOException::class)
     private fun createUniqueFile(): File {
-        val filePath = System.getProperty("user.dir") + "\\" + fileName
+        val filePath = System.getProperty("user.dir") + File.separator + fileName
         println(filePath);
-        val file = File(filePath)
+        val file = File(File(filePath).name)
         try {
             file.createNewFile();
         } catch (ex: Exception) {

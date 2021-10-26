@@ -14,6 +14,7 @@ class Client {
                     sendProtocol.sendFileSize()
                     sendProtocol.sendFile()
                     val status: String = sendProtocol.receiveTransferStatus()
+                    println(status)
                 }
             }
         } catch (e: IOException) {
