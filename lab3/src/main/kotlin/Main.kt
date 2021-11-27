@@ -51,6 +51,7 @@ class PlaceInfoFinder {
                 .asJsonObject.get("description").toString()
             windSpeed = je.asJsonObject.get("wind")
                 .asJsonObject.get("speed").toString()
+            logger.info("weather get success");
             return@supplyAsync "Weather info: $description, $windSpeed"
         }
     }
@@ -71,6 +72,7 @@ class PlaceInfoFinder {
             }
             val je: JsonElement = JsonParser().parse(jsonText)
             stream.close()
+            logger.info("get info by xid $xid success")
             return@supplyAsync (
                     "city : ${je.asJsonObject.get("address").asJsonObject.get("city")}\n" +
                             "state : ${je.asJsonObject.get("address").asJsonObject.get("state")}\n" +
@@ -87,10 +89,12 @@ class PlaceInfoFinder {
         list: MutableList<CompletableFuture<String>>
     ) {
         val urlString =
-            "https://api.opentripmap.com/0.1/en/places/radius?radius=1000&lon=$lon&lat=$lat&limit=10&apikey=$opentripmapAPIKey"
+            "https://api.opentripmap.com/0.1/en/places/radius?radius=1000&lon=$lon&lat=$lat&limit=50&apikey=$opentripmapAPIKey"
         logger.info("places list url: $urlString")
         val je = getJsonElementByUrl(urlString)
+        var countRequest = 0;
         for (i in 0 until je.asJsonObject.get("features").asJsonArray.size()) {
+            countRequest++;
             val xid =
                 je.asJsonObject.get("features")
                     .asJsonArray.get(i)
@@ -98,49 +102,52 @@ class PlaceInfoFinder {
                     .asJsonObject.get("xid")
                     .toString()
             list.add(getInfoByxid(xid))
-            sleep(1000) //429 error
+            if (countRequest == 8) {
+                sleep(1000)
+                countRequest = 0
+            }
         }
+        logger.info("future")
     }
 
     fun work(): MutableList<String> {
         val futuresList = mutableListOf<CompletableFuture<String>>()
         val textList = mutableListOf<String>()
-        val coords = CompletableFuture.supplyAsync {
-            val urlString = "https://graphhopper.com/api/1/geocode?q=%22${getPlace()}%22&key=$graphhopperAPIKey"
-            logger.info("graphhopper url: $urlString")
-            val je = getJsonElementByUrl(urlString)
-            logger.info("Get data success")
-            val jo = je.asJsonObject.get("hits").asJsonArray
-            for (i in 0 until jo.size()) {
-                val objec = jo.get(i)
-                println("$i ${objec.asJsonObject.get("country")} ${objec.asJsonObject.get("name")}")
-            }
-            logger.info("Get place success")
-            var number: Int
-            do {
-                println("Enter place number. (less then ${jo.size()})")
-                number = Scanner(System.`in`).nextInt()
-            } while (number > jo.size())
-            val cords = jo.get(number).asJsonObject.get("point").toString()
-            val lat_lon = cords.split(",")
-            val lat = lat_lon[0].substring(lat_lon[0].indexOf(":") + 1 until lat_lon[0].length)
-            val lon = lat_lon[1].substring(lat_lon[1].indexOf(":") + 1 until lat_lon[1].length - 1)
-            logger.info("get coords : $lat ; $lon")
-            Pair(lat, lon)
-            futuresList.add(getWeather(lat, lon))
-            getInterestPlacesNear(lat, lon, futuresList)
-            for (i in 0 until futuresList.size) {
-                futuresList[i].join()
-                textList.add(futuresList[i].get())
-            }
+        val urlString = "https://graphhopper.com/api/1/geocode?q=%22${getPlace()}%22&key=$graphhopperAPIKey"
+        logger.info("graphhopper url: $urlString")
+        val je = getJsonElementByUrl(urlString)
+        logger.info("Get data success")
+        val jo = je.asJsonObject.get("hits").asJsonArray
+        for (i in 0 until jo.size()) {
+            val objec = jo.get(i)
+            println("$i ${objec.asJsonObject.get("country")} ${objec.asJsonObject.get("name")}")
         }
-        coords.join()
+        logger.info("Get place success")
+        var number: Int
+        do {
+            println("Enter place number. (less then ${jo.size()})")
+            number = Scanner(System.`in`).nextInt()
+        } while (number > jo.size())
+        val cords = jo.get(number).asJsonObject.get("point").toString()
+        val lat_lon = cords.split(",")
+        val lat = lat_lon[0].substring(lat_lon[0].indexOf(":") + 1 until lat_lon[0].length)
+        val lon = lat_lon[1].substring(lat_lon[1].indexOf(":") + 1 until lat_lon[1].length - 1)
+        logger.info("get coords : $lat ; $lon")
+        Pair(lat, lon)
+        futuresList.add(getWeather(lat, lon))
+        getInterestPlacesNear(lat, lon, futuresList)
+        CompletableFuture.allOf();
+        for (i in 0 until futuresList.size) {
+            futuresList[i].join()
+            textList.add(futuresList[i].get())
+        }
         return textList
     }
 
     private fun getJsonElementByUrl(
         url: String
     ): JsonElement {
+        // https://www.baeldung.com/async-http-client
         val `in` = BufferedReader(InputStreamReader(URL(url).openStream()))
         var inputLine: String?
         val sb = StringBuilder()
@@ -151,6 +158,13 @@ class PlaceInfoFinder {
         }
         `in`.close()
         return JsonParser().parse(sb.toString())
+    }
+
+    fun listToArray(list : MutableList<CompletableFuture<String>>){
+        val array : Array<CompletableFuture<String>> = Array<>
+        for(i in 0 until list.size){
+            array
+        }
     }
 
     private fun getPlace(
