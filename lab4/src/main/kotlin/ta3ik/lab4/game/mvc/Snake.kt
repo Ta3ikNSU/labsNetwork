@@ -13,5 +13,5 @@ class Snake(
     var dir : Direction = Direction.UP
 ) {
     val parts : MutableList<Point> = mutableListOf(head);
-    val image : Image = ImageIO.read(File("C:\\Users\\Ta3ik\\IdeaProjects\\lab4\\src\\main\\resources\\ta3ik\\lab4\\$index.png"))
+    val image : Image = ImageIO.read(File("src/main/resources/ta3ik/lab4/$index.png"))
 }

@@ -28,10 +28,10 @@ class Controller : KeyListener {
 
     override fun keyPressed(e: KeyEvent) {
         when (e.keyCode) {
-            VK_W -> snake.dir = Direction.UP
-            VK_A -> snake.dir = Direction.LEFT
-            VK_S -> snake.dir = Direction.DOWN
-            VK_D -> snake.dir = Direction.RIGHT
+            VK_W -> if(snake.dir != Direction.DOWN || snake.parts.size == 1) snake.dir = Direction.UP
+            VK_A -> if(snake.dir != Direction.RIGHT || snake.parts.size == 1) snake.dir = Direction.LEFT
+            VK_S -> if(snake.dir != Direction.UP || snake.parts.size == 1) snake.dir = Direction.DOWN
+            VK_D -> if(snake.dir != Direction.LEFT || snake.parts.size == 1) snake.dir = Direction.RIGHT
         }
         model.move()
     }
