@@ -20,14 +20,12 @@ public class DnsUtils {
     private static final Logger logger = Logger.getLogger(DnsUtils.class.getName());
 
     public static void read(@NotNull SelectionKey key) throws IOException {
-
+        logger.log(Level.INFO, "");
         Attachment attach = (Attachment) key.attachment();
-
         Message message = new Message(attach.getIn().array());
         Optional<Record> maybeRecord = message.getSection(Section.ANSWER).stream().findAny();
         if (maybeRecord.isPresent()) {
             InetAddress address = InetAddress.getByName(maybeRecord.get().rdataToString());
-
             ((Attachment) attach.getPair().attachment()).couple(address, attach.getPort(), attach.getPair());
             ((Attachment) attach.getPair().attachment()).setType(Type.NONE);
             int[] ip = new int[4];

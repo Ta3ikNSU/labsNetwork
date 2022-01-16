@@ -20,59 +20,7 @@ public class SocksProxyServer implements Runnable {
 
     private final Integer port;
 
-    private final Logger logger = Logger.getLogger(this.getClass().getName());
-
-    public static SocketChannel getChannel(@NotNull SelectionKey key) {
-        return (SocketChannel) key.channel();
-    }
-
-    public static ByteChannel getByteChannel(@NotNull SelectionKey key) {
-        return (ByteChannel) key.channel();
-    }
-
-    public static void clearIn(@NotNull SelectionKey key) {
-        ((Attachment) key.attachment()).getIn().clear();
-    }
-
-    public static void clearOut(@NotNull SelectionKey key) {
-        ((Attachment) key.attachment()).getOut().clear();
-    }
-
-    public static void clearBuffers(@NotNull SelectionKey key) {
-        clearIn(key);
-        clearOut(key);
-    }
-
-    public static boolean isDecoupled(@NotNull SelectionKey key) {
-        return ((Attachment) key.attachment()).isCoupled();
-    }
-
-
-    public static void couple(InetAddress address, int port, @NotNull SelectionKey key) throws IOException {
-        ((Attachment) key.attachment()).couple(address, port, key);
-
-    }
-
-    public static void close(@NotNull SelectionKey key) throws IOException {
-        key.cancel();
-        key.channel().close();
-        ((Attachment) key.attachment()).decouple();
-    }
-
-    public static void partiallyClose(@NotNull SelectionKey key) throws IOException {
-        key.cancel();
-        key.channel().close();
-    }
-
-    public static boolean tryWriteToBuffer(@NotNull SelectionKey key) throws IOException {
-        ByteBuffer buf = ((Attachment) key.attachment()).getOut();
-        buf.flip();
-        return (getByteChannel(key).write(buf) > 0);
-    }
-
-    public static boolean outIsEmpty(@NotNull SelectionKey key) {
-        return (((Attachment) key.attachment()).getOut().remaining() == 0);
-    }
+    private static final Logger logger = Logger.getLogger(SocksProxyServer.class.getName());
 
     @SneakyThrows
     @Override
@@ -108,8 +56,65 @@ public class SocksProxyServer implements Runnable {
                     }
                 }
             }
+
         }
     }
+
+    public static SocketChannel getChannel(@NotNull SelectionKey key) {
+        return (SocketChannel) key.channel();
+    }
+
+    public static ByteChannel getByteChannel(@NotNull SelectionKey key) {
+        return (ByteChannel) key.channel();
+    }
+
+    public static void clearIn(@NotNull SelectionKey key) {
+        ((Attachment) key.attachment()).getIn().clear();
+    }
+
+    public static void clearOut(@NotNull SelectionKey key) {
+        ((Attachment) key.attachment()).getOut().clear();
+    }
+
+    public static void clearBuffers(@NotNull SelectionKey key) {
+        clearIn(key);
+        clearOut(key);
+    }
+
+    public static boolean isDecoupled(@NotNull SelectionKey key) {
+        return !((Attachment) key.attachment()).isCoupled();
+    }
+
+
+    public static void couple(InetAddress address, int port, @NotNull SelectionKey key) throws IOException {
+        ((Attachment) key.attachment()).couple(address, port, key);
+
+    }
+
+    public static void close(@NotNull SelectionKey key) throws IOException {
+        key.cancel();
+        key.channel().close();
+        ((Attachment) key.attachment()).decouple();
+    }
+
+    public static void partiallyClose(@NotNull SelectionKey key) throws IOException {
+        key.cancel();
+        key.channel().close();
+    }
+
+    public static boolean tryWriteToBuffer(@NotNull SelectionKey key) throws IOException {
+        ByteBuffer buf = ((Attachment) key.attachment()).getOut();
+        buf.flip();
+        int writeSymbols = getByteChannel(key).write(buf);
+        logger.log(Level.INFO, "write symbols - " + writeSymbols);
+        return (writeSymbols > 0);
+    }
+
+    public static boolean outIsEmpty(@NotNull SelectionKey key) {
+        return (((Attachment) key.attachment()).getOut().remaining() == 0);
+    }
+
+
 
     private void handleAccept(@NotNull SelectionKey key) throws IOException {
         // accept channel from user
@@ -134,7 +139,9 @@ public class SocksProxyServer implements Runnable {
             key.attach(new Attachment(Type.AUTH_READ));
         }
         attach = ((Attachment) key.attachment());
-        if (getByteChannel(key).read(((Attachment) key.attachment()).getIn()) <= 0) {
+        int countReadSymbol = getByteChannel(key).read(((Attachment) key.attachment()).getIn());
+        logger.log(Level.INFO, countReadSymbol  + " - count read symbols");
+        if (countReadSymbol <= 0) {
             close(key);
             if (attach.getType() == Type.DNS_READ) {
                 throw new Exception("Bad dns reply");
@@ -158,7 +165,7 @@ public class SocksProxyServer implements Runnable {
                 case AUTH_WRITE -> authWrite(key);
                 case DNS_WRITE -> DnsUtils.write(key);
                 default -> {
-                    if (((Attachment) key.attachment()).isCoupled()) {
+                    if (!((Attachment) key.attachment()).isCoupled()) {
                         close(key);
                     } else {
                         coupledToRead(key);

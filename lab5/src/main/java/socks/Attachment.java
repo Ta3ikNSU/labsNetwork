@@ -63,11 +63,11 @@ class Attachment {
     }
 
     public void couple(@NotNull InetAddress connectAddress, int connectPort, @NotNull SelectionKey parentKey) throws IOException {
-        logger.log(Level.FINE, "Coupling on " + connectAddress + connectPort);
+        logger.log(Level.INFO, "Coupling on " + connectAddress + ":" + connectPort);
 
         SocketChannel coupleChannel = SocketChannel.open();
-        boolean isConnected = coupleChannel.connect(new InetSocketAddress(connectAddress, connectPort));
         coupleChannel.configureBlocking(false);
+        boolean isConnected = coupleChannel.connect(new InetSocketAddress(connectAddress, connectPort));
 
         this.pair = coupleChannel.register(parentKey.selector(), SelectionKey.OP_CONNECT);
 
